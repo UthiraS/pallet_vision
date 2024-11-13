@@ -2,14 +2,16 @@ data/
 weights/
 output/
 runs/
-
+runs_detection/
 misc/
-
+home/
+inference_results/
 
 %venv%
 palletize-vision/
 sam2/
-
+sam2_py310/
+venv-sam2/
 wandb/
 
 segment-anything-2/

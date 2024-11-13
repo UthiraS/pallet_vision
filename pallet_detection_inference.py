@@ -22,8 +22,8 @@ def validate_model(data_path):
             data=f"{data_path}/data.yaml",
             batch=16,
             device=0,  # Use GPU
-            logger='wandb',
-            split='val',  # Use validation split
+            
+            split='test',  # Use validation split
             conf=0.25,  # Confidence threshold
             iou=0.7,    # NMS IoU threshold
             max_det=300,  # Maximum detections per image
@@ -129,7 +129,7 @@ def main():
     os.system("pip install ultralytics supervision wandb nvidia-ml-py3")
     
     # Set your dataset path
-    data_path = "dataset"  # Update this to your dataset path
+    data_path = "/home/uthira/pallet-detection/data/dataset"  # Update this to your dataset path
     
     # Login to WandB
     wandb.login()

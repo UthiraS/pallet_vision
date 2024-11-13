@@ -7,9 +7,9 @@ def split_and_organize_pallet_data(base_path):
     # Define paths
     base_path = Path("/home/uthira/pallet-detection")
     pallets_path = base_path / "data" / "Pallets"
-    labels_path = base_path / "data" / "Labels_Pallets"
+    labels_path = base_path / "data" / "segment_labels"
     annotations_path = base_path / "data" / "Annotated_Pallets"
-    dataset_path = base_path / "data" / "dataset"
+    dataset_path = base_path / "data" / "dataset-segment"
 
     # Create directories if they don't exist
     for split in ['train', 'test', 'val']:

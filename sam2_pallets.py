@@ -6,10 +6,15 @@ from pathlib import Path
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
+
 def load_sam2_model(checkpoint_path, config="sam2_hiera_l.yaml", device="cuda"):
     """Initialize SAM2 model"""
     device = torch.device(device if torch.cuda.is_available() else "cpu")
-    sam2_model = build_sam2(config, checkpoint_path, device=device, apply_postprocessing=False)
+    
+    CHECKPOINT = f"/content/weights/checkpoints/sam2_hiera_large.pt"
+    CONFIG = "sam2_hiera_l.yaml"
+
+    sam2_model = build_sam2(CONFIG, CHECKPOINT, device=device, apply_postprocessing=False)
     return sam2_model, device
 
 def yolo_to_xyxy(center_x, center_y, width, height, img_width, img_height):
@@ -136,7 +141,9 @@ def save_results(output_dir, image_name, masks, original_image):
     cv2.imwrite(vis_path, visualization)
 def main():
     # Configuration
-    checkpoint_path = "/home/uthira/pallet-detection/segment-anything-2/weights/checkpoints/sam2_hiera_large.pt"  # Update with your checkpoint path
+  
+
+    checkpoint_path = "/home/uthira/pallet-detection/weights/checkpoints/sam2_hiera_large.pt"  # Update with your checkpoint path
     pallet_dir = "data/Pallets"
     annotation_dir = "data/Labels_Pallets"
     output_dir = "data/sam2_Pallets"
