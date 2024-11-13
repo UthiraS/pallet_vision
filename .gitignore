@@ -1,0 +1,16 @@
+data/ 
+weights/
+output/
+runs/
+
+misc/
+
+
+%venv%
+palletize-vision/
+sam2/
+
+wandb/
+
+segment-anything-2/
+
