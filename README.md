@@ -68,7 +68,10 @@ pip install -r requirements.txt
 
 #### Inference and IOU
 - `segmentation_inference.py`: Segmentation inference
-- `segmentation_inference_iou.py`: IoU calculation
+- ` python segmentation_evaluation.py \
+    --weights runs/segment/train/weights/best.pt \
+    --test-images /home/uthira/pallet-detection/data/dataset-segment/test/images \
+    --masks /home/uthira/pallet-detection/data/masks `: IoU calculation
 
 ### Utils
 
@@ -92,18 +95,22 @@ pip install -r requirements.txt
 
 ### Detection Results
 ```
-mAP@0.5: 0.892
-Precision: 0.901
-Recall: 0.887
+
+  - mAP@50: 0.59144
+  - Precision: 0.64713
+  - Recall: 0.51344
 ```
 
 ![Detection Results](results/aug_pallet_105.jpg)
 
 ### Segmentation Results
 ```
-mIoU: 0.856
-Boundary IoU: 0.823
-```
+Mean IoU Overall: 0.0400
+Max IoU Overall: 0.9516
+Min IoU Overall: 0.0000
+Median IoU: 0.0131
+`
+``
 
 ![Segmentation Results](results/vis_pallet_381.png)
 

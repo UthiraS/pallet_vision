@@ -7,6 +7,23 @@ import numpy as np
 from pathlib import Path
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import argparse
+
+def parse_args():
+    """
+    Parse command line arguments
+    """
+    parser = argparse.ArgumentParser(description='YOLO Segmentation Evaluation')
+    
+    # Required arguments
+    parser.add_argument('--weights', type=str, required=True,
+                      help='Path to model weights file (e.g., best.pt)')
+    parser.add_argument('--test-images', type=str, required=True,
+                      help='Path to test images directory')
+    parser.add_argument('--masks', type=str, required=True,
+                      help='Path to ground truth masks directory')
+    
+    return parser.parse_args()
 
 class SegmentationEvaluator:
     def __init__(self, model_path, test_data_path, mask_data_path, imgsz=640):
@@ -257,17 +274,20 @@ class SegmentationEvaluator:
             return None
 
 def main():
-    print("Starting YOLO11 Segmentation Evaluation...")
+    print("Starting YOLO Segmentation Evaluation...")
     
-    # Setup paths
-    model_path = "runs/segment/train/weights/best.pt"
-    test_data_path = "/home/uthira/pallet-detection/data/dataset-segment/test/images"
-    mask_data_path = "/home/uthira/pallet-detection/data/masks"
+    # Parse command line arguments
+    args = parse_args()
     
     # Convert to absolute paths
-    model_path = os.path.abspath(model_path)
-    test_data_path = os.path.abspath(test_data_path)
-    mask_data_path = os.path.abspath(mask_data_path)
+    model_path = os.path.abspath(args.weights)
+    test_data_path = os.path.abspath(args.test_images)
+    mask_data_path = os.path.abspath(args.masks)
+    
+    print(f"\nUsing paths:")
+    print(f"Model weights: {model_path}")
+    print(f"Test images: {test_data_path}")
+    print(f"Mask data: {mask_data_path}")
     
     # Initialize WandB
     wandb.init(

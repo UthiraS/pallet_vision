@@ -6,12 +6,24 @@ import nvidia_smi
 import cv2
 import supervision as sv
 from pathlib import Path
+import argparse
 
-def validate_model(data_path):
+def parse_args():
+    """
+    Parse command line arguments
+    """
+    parser = argparse.ArgumentParser(description='YOLOv11 Inference Pipeline')
+    parser.add_argument('--weights', type=str, required=True,
+                      help='Path to the model weights file (e.g., best.pt)')
+    parser.add_argument('--source', type=str, required=True,
+                      help='Path to source images directory')
+    return parser.parse_args()
+
+def validate_model(weights_path,data_path):
     """
     Validate the trained model on GPU and log metrics to WandB
     """
-    weights_path = f"{os.getcwd()}/runs/detect/train/weights/best.pt"
+    # weights_path = f"{os.getcwd()}/runs/detect/train/weights/best.pt"
     
     try:
         # Initialize model with best weights
@@ -47,11 +59,11 @@ def validate_model(data_path):
     except Exception as e:
         print(f"Error during validation: {str(e)}")
 
-def run_inference(data_path):
+def run_inference(weights_path,data_path):
     """
     Run inference on test images using GPU and log results to WandB
     """
-    weights_path = f"{os.getcwd()}/runs/detect/train/weights/best.pt"
+    # weights_path = f"{os.getcwd()}/runs/detect/train/weights/best.pt"
     test_images_path = os.path.join(data_path, 'test', 'images')
     output_path = os.path.join(os.getcwd(), 'runs/detect/inference')
     os.makedirs(output_path, exist_ok=True)
@@ -123,13 +135,14 @@ def run_inference(data_path):
         print(f"Error during inference: {str(e)}")
 
 def main():
+    args = parse_args()
     print("Starting YOLOv11 validation and inference pipeline...")
     
     # Install required packages
     os.system("pip install ultralytics supervision wandb nvidia-ml-py3")
     
     # Set your dataset path
-    data_path = "/home/uthira/pallet-detection/data/dataset"  # Update this to your dataset path
+    # data_path = "/home/uthira/pallet-detection/data/dataset"  # Update this to your dataset path
     
     # Login to WandB
     wandb.login()
@@ -145,14 +158,15 @@ def main():
             "gpu": torch.cuda.get_device_name(0)
         }
     )
-    
+    print(f"Model weights: {args.weights}")
+    print(f"Source images: {args.source}")
     # Run validation
     print("\nRunning validation...")
-    validate_model(data_path)
+    validate_model(args.weights, args.source)
     
     # Run inference
     print("\nRunning inference on test images...")
-    run_inference(data_path)
+    run_inference(args.weights, args.source)
     
     # Finish WandB run
     wandb.finish()
