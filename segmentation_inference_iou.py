@@ -9,111 +9,141 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 class SegmentationEvaluator:
-    def __init__(self, model_path, test_data_path, imgsz=640):
+    def __init__(self, model_path, test_data_path, mask_data_path, imgsz=640):
         """
-        Initialize evaluator with specific image size
+        Initialize evaluator
+        Args:
+            model_path: Path to model weights
+            test_data_path: Path to test images
+            mask_data_path: Path to ground truth masks
+            imgsz: Model input size
         """
         self.model = YOLO(model_path)
         self.test_data_path = Path(test_data_path)
+        self.mask_data_path = Path(mask_data_path)
         self.imgsz = imgsz
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
         print(f"Test data path: {self.test_data_path}")
-        print(f"Model input size: {self.imgsz}")
+        print(f"Mask data path: {self.mask_data_path}")
 
-    def process_image(self, image_path):
+    def load_ground_truth_mask(self, img_path):
         """
-        Process image to correct size while maintaining aspect ratio
+        Load corresponding ground truth mask
         """
-        # Read image
-        image = cv2.imread(str(image_path))
-        if image is None:
-            return None, None
+        try:
+            mask_path = self.mask_data_path / f"{img_path.stem}_combined.npy"
+            if mask_path.exists():
+                mask = np.load(str(mask_path))
+                binary_mask = mask > 0
+                print(f"Loaded GT mask shape: {binary_mask.shape}")
+                return binary_mask
+            else:
+                print(f"No GT mask found at {mask_path}")
+                return None
+        except Exception as e:
+            print(f"Error loading GT mask: {str(e)}")
+            return None
+
+    def calculate_iou(self, pred_mask, gt_mask):
+        """
+        Calculate IoU between predicted and ground truth masks
+        """
+        if pred_mask is None or gt_mask is None:
+            return 0
+        
+        intersection = np.logical_and(pred_mask, gt_mask)
+        union = np.logical_or(pred_mask, gt_mask)
+        iou = np.sum(intersection) / np.sum(union) if np.sum(union) > 0 else 0
+        return iou
+
+    def calculate_mask_metrics(self, pred_masks, gt_mask):
+        """
+        Calculate IoU and other metrics for all predicted masks
+        """
+        if gt_mask is None or not pred_masks:
+            return None
             
-        # Get original dimensions
-        original_height, original_width = image.shape[:2]
-        
-        # Calculate scaling to maintain aspect ratio
-        scale = self.imgsz / max(original_height, original_width)
-        new_height = int(original_height * scale)
-        new_width = int(original_width * scale)
-        
-        # Resize image
-        resized_image = cv2.resize(image, (new_width, new_height))
-        
-        # Create square image with padding
-        square_image = np.zeros((self.imgsz, self.imgsz, 3), dtype=np.uint8)
-        
-        # Calculate padding
-        y_offset = (self.imgsz - new_height) // 2
-        x_offset = (self.imgsz - new_width) // 2
-        
-        # Place resized image in center
-        square_image[y_offset:y_offset + new_height, 
-                    x_offset:x_offset + new_width] = resized_image
-        
-        return square_image, (original_height, original_width, x_offset, y_offset, new_height, new_width)
+        # Calculate IoU for each predicted mask
+        ious = []
+        for pred_mask in pred_masks:
+            iou = self.calculate_iou(pred_mask, gt_mask)
+            ious.append(iou)
+            
+        metrics = {
+            'max_iou': max(ious) if ious else 0,
+            'mean_iou': np.mean(ious) if ious else 0,
+            'all_ious': ious
+        }
+        return metrics
 
-    def restore_mask_dimensions(self, mask, original_dims):
+    def save_visualization(self, original_image, pred_masks, gt_mask, conf_scores, metrics, save_path):
         """
-        Restore mask to original image dimensions
+        Save visualization with predictions, ground truth, and metrics
         """
-        orig_h, orig_w, x_offset, y_offset, new_h, new_w = original_dims
+        # Create a 2x2 grid visualization
+        h, w = original_image.shape[:2]
+        grid = np.zeros((h*2, w*2, 3), dtype=np.uint8)
         
-        # Extract the actual mask region (remove padding)
-        mask_cropped = mask[y_offset:y_offset + new_h, x_offset:x_offset + new_w]
+        # Original image (top-left)
+        grid[:h, :w] = original_image
         
-        # Resize to original dimensions
-        restored_mask = cv2.resize(mask_cropped.astype(float), (orig_w, orig_h)) > 0.5
+        # Ground truth overlay (top-right)
+        gt_vis = original_image.copy()
+        if gt_mask is not None:
+            gt_overlay = np.zeros_like(original_image)
+            gt_overlay[gt_mask] = [0, 255, 0]  # Green for ground truth
+            gt_vis = cv2.addWeighted(gt_vis, 0.7, gt_overlay, 0.3, 0)
+        grid[:h, w:] = gt_vis
         
-        return restored_mask
-
-    def save_visualization(self, original_image, masks, conf_scores, save_path):
-        """
-        Save visualization of segmentation predictions
-        """
-        # Create a copy of the image for visualization
-        vis_image = original_image.copy()
-        
-        # Create different colors for each instance
-        colors = np.random.randint(0, 255, size=(len(masks), 3), dtype=np.uint8)
-        
-        # Apply each mask with different colors
-        for i, (mask, conf) in enumerate(zip(masks, conf_scores)):
+        # Predictions overlay (bottom-left)
+        pred_vis = original_image.copy()
+        colors = np.random.randint(0, 255, size=(len(pred_masks), 3), dtype=np.uint8)
+        for i, (mask, conf) in enumerate(zip(pred_masks, conf_scores)):
             color = colors[i].tolist()
-            
-            # Create colored overlay for this instance
             overlay = np.zeros_like(original_image)
             overlay[mask] = color
+            pred_vis = cv2.addWeighted(pred_vis, 0.7, overlay, 0.3, 0)
             
-            # Blend with main image
-            alpha = 0.5
-            cv2.addWeighted(overlay, alpha, vis_image, 1 - alpha, 0, vis_image)
-            
-            # Add confidence score
+            # Add confidence and IoU scores
             y_pos = 30 + (i * 30)
-            cv2.putText(
-                vis_image,
-                f"Instance {i+1}, Conf: {conf:.2f}",
-                (10, y_pos),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (255, 255, 255),
-                2
-            )
+            text = f"Inst {i+1}, Conf: {conf:.2f}"
+            if metrics and metrics['all_ious']:
+                text += f", IoU: {metrics['all_ious'][i]:.2f}"
+            cv2.putText(pred_vis, text, (10, y_pos), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        grid[h:, :w] = pred_vis
         
-        # Save the visualization
-        cv2.imwrite(save_path, vis_image)
-        return vis_image
+        # Difference visualization (bottom-right)
+        diff_vis = original_image.copy()
+        if gt_mask is not None:
+            for pred_mask in pred_masks:
+                diff_overlay = np.zeros_like(original_image)
+                # True Positive (Green)
+                diff_overlay[np.logical_and(pred_mask, gt_mask)] = [0, 255, 0]
+                # False Positive (Red)
+                diff_overlay[np.logical_and(pred_mask, ~gt_mask)] = [0, 0, 255]
+                # False Negative (Blue)
+                diff_overlay[np.logical_and(~pred_mask, gt_mask)] = [255, 0, 0]
+                diff_vis = cv2.addWeighted(diff_vis, 0.7, diff_overlay, 0.3, 0)
+        grid[h:, w:] = diff_vis
+        
+        # Add metric text
+        if metrics:
+            cv2.putText(grid, f"Max IoU: {metrics['max_iou']:.3f}", (w+10, h+30),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(grid, f"Mean IoU: {metrics['mean_iou']:.3f}", (w+10, h+70),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        
+        cv2.imwrite(save_path, grid)
+        return grid
 
     def evaluate(self, output_dir='runs/segment/evaluation'):
-        """
-        Evaluate model performance on test dataset
-        """
         os.makedirs(output_dir, exist_ok=True)
-        results_table = wandb.Table(columns=["image", "num_instances", "confidence_scores", "visualization"])
+        results_table = wandb.Table(columns=["image", "num_instances", "max_iou", "mean_iou", "visualization"])
         
         total_instances = 0
+        all_ious = []
         confidence_scores = []
         
         test_images = list(self.test_data_path.glob('pallet_*.jpg'))
@@ -122,19 +152,18 @@ class SegmentationEvaluator:
         for img_path in tqdm(test_images, desc="Evaluating"):
             print(f"\nProcessing image: {img_path}")
             
-            # Process image
-            square_image, original_dims = self.process_image(img_path)
-            if square_image is None:
+            # Load image and ground truth
+            image = cv2.imread(str(img_path))
+            if image is None:
                 print(f"Failed to load image: {img_path}")
                 continue
-            
-            # Keep original image for visualization
-            original_image = cv2.imread(str(img_path))
+                
+            gt_mask = self.load_ground_truth_mask(img_path)
             
             try:
                 # Run inference
                 results = self.model.predict(
-                    source=square_image,
+                    source=image,
                     task='segment',
                     conf=0.25,
                     iou=0.7,
@@ -143,38 +172,46 @@ class SegmentationEvaluator:
                 
                 if results.masks is not None:
                     # Get masks and confidence scores
-                    masks = results.masks.data.cpu().numpy()
+                    pred_masks = results.masks.data.cpu().numpy()
                     conf_scores = results.boxes.conf.cpu().numpy()
                     
-                    # Restore masks to original dimensions
-                    restored_masks = [
-                        self.restore_mask_dimensions(mask, original_dims)
-                        for mask in masks
-                    ]
+                    # Resize masks to match image dimensions
+                    restored_masks = []
+                    for mask in pred_masks:
+                        if mask.shape[:2] != image.shape[:2]:
+                            mask = cv2.resize(mask.astype(float), 
+                                           (image.shape[1], image.shape[0])) > 0.5
+                        restored_masks.append(mask)
+                    
+                    # Calculate metrics
+                    metrics = self.calculate_mask_metrics(restored_masks, gt_mask)
+                    if metrics:
+                        all_ious.extend(metrics['all_ious'])
                     
                     num_instances = len(restored_masks)
                     total_instances += num_instances
                     confidence_scores.extend(conf_scores)
                     
-                    # Create and save visualization
+                    # Create visualization
                     vis_path = os.path.join(output_dir, f'vis_{img_path.stem}.png')
                     vis_image = self.save_visualization(
-                        original_image, 
-                        restored_masks, 
-                        conf_scores, 
-                        vis_path
+                        image, restored_masks, gt_mask, 
+                        conf_scores, metrics, vis_path
                     )
                     
-                    # Add to results table
+                    # Log results
                     results_table.add_data(
-                        wandb.Image(original_image),
+                        wandb.Image(image),
                         num_instances,
-                        np.mean(conf_scores) if len(conf_scores) > 0 else 0,
+                        metrics['max_iou'] if metrics else 0,
+                        metrics['mean_iou'] if metrics else 0,
                         wandb.Image(vis_image)
                     )
                     
                     print(f"Found {num_instances} instances in {img_path.name}")
-                    print(f"Confidence scores: {conf_scores}")
+                    if metrics:
+                        print(f"Max IoU: {metrics['max_iou']:.4f}")
+                        print(f"Mean IoU: {metrics['mean_iou']:.4f}")
                 else:
                     print(f"No detections in {img_path.name}")
                     
@@ -185,23 +222,25 @@ class SegmentationEvaluator:
                 continue
         
         # Calculate summary statistics
-        if len(confidence_scores) > 0:
+        if len(all_ious) > 0:
             metrics = {
                 "total_images_processed": len(test_images),
                 "total_instances_detected": total_instances,
                 "avg_instances_per_image": total_instances / len(test_images),
+                "mean_iou_overall": np.mean(all_ious),
+                "max_iou_overall": np.max(all_ious),
+                "min_iou_overall": np.min(all_ious),
+                "median_iou": np.median(all_ious),
                 "mean_confidence": np.mean(confidence_scores),
-                "min_confidence": np.min(confidence_scores),
-                "max_confidence": np.max(confidence_scores)
             }
             
-            # Create confidence score distribution plot
+            # Create IoU distribution plot
             plt.figure(figsize=(10, 6))
-            plt.hist(confidence_scores, bins=20, edgecolor='black')
-            plt.title('Distribution of Confidence Scores')
-            plt.xlabel('Confidence Score')
+            plt.hist(all_ious, bins=20, edgecolor='black')
+            plt.title('Distribution of IoU Scores')
+            plt.xlabel('IoU Score')
             plt.ylabel('Frequency')
-            plot_path = os.path.join(output_dir, 'confidence_distribution.png')
+            plot_path = os.path.join(output_dir, 'iou_distribution.png')
             plt.savefig(plot_path)
             plt.close()
             
@@ -209,7 +248,7 @@ class SegmentationEvaluator:
             wandb.log({
                 "results": results_table,
                 "metrics": metrics,
-                "confidence_distribution": wandb.Image(plot_path)
+                "iou_distribution": wandb.Image(plot_path)
             })
             
             return metrics
@@ -223,28 +262,27 @@ def main():
     # Setup paths
     model_path = "runs/segment/train/weights/best.pt"
     test_data_path = "/home/uthira/pallet-detection/data/dataset-segment/test/images"
+    mask_data_path = "/home/uthira/pallet-detection/data/masks"
     
     # Convert to absolute paths
     model_path = os.path.abspath(model_path)
     test_data_path = os.path.abspath(test_data_path)
-    
-    print(f"Model path: {model_path}")
-    print(f"Test data path: {test_data_path}")
+    mask_data_path = os.path.abspath(mask_data_path)
     
     # Initialize WandB
     wandb.init(
         project="pallet-segmentation",
-        name="yolov11m-seg-evaluation-basic",
+        name="yolov11m-seg-evaluation-iou",
         config={
             "model": "yolov11m-seg",
             "task": "segment",
-            "evaluation_type": "basic"
+            "evaluation_type": "mask_iou"
         }
     )
     
     try:
         # Initialize evaluator
-        evaluator = SegmentationEvaluator(model_path, test_data_path, imgsz=640)
+        evaluator = SegmentationEvaluator(model_path, test_data_path, mask_data_path)
         
         # Run evaluation
         metrics = evaluator.evaluate()

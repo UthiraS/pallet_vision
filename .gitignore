@@ -3,6 +3,7 @@ weights/
 output/
 runs/
 runs_detection/
+runs_seg/
 misc/
 home/
 inference_results/

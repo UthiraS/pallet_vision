@@ -1,20 +1,20 @@
-"""
-YOLO TensorRT Export and Basic Optimizations
-------------------------------------------
+# """
+# YOLO TensorRT Export and Basic Optimizations
+# ------------------------------------------
 
-Key Steps:
-1. Model Loading and Quantization (INT8/FP16)
-   - Reduces model size
-   - Speeds up inference
+# Key Steps:
+# 1. Model Loading and Quantization (INT8/FP16)
+#    - Reduces model size
+#    - Speeds up inference
    
-2. TensorRT Export
-   - Converts PyTorch model to TensorRT
-   - Optimizes for NVIDIA GPUs
+# 2. TensorRT Export
+#    - Converts PyTorch model to TensorRT
+#    - Optimizes for NVIDIA GPUs
    
-3. Basic Pruning
-   - Removes redundant weights
-   - Makes model lighter
-"""
+# 3. Basic Pruning
+#    - Removes redundant weights
+#    - Makes model lighter
+# """
 
 import torch
 import tensorrt as trt
