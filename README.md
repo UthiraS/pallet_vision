@@ -2,8 +2,8 @@
 
 This project implements an end-to-end solution for pallet detection and segmentation using YOLOv11 and SAM2 (Segment Anything Model 2). It includes tools for annotation, training, inference, and evaluation.
 
-![Pallet Detection Example](output/detection_example.jpg)
-![Pallet Segmentation Example](output/segmentation_example.jpg)
+![Pallet Detection Example](results/aug_pallet_287.jpg)
+![Pallet Segmentation Example](results/vis_pallet_337.png)
 
 ## Dataset
 
@@ -97,7 +97,7 @@ Precision: 0.901
 Recall: 0.887
 ```
 
-![Detection Results](output/detection_results.jpg)
+![Detection Results](results/aug_pallet_105.jpg)
 
 ### Segmentation Results
 ```
@@ -105,7 +105,7 @@ mIoU: 0.856
 Boundary IoU: 0.823
 ```
 
-![Segmentation Results](output/segmentation_results.jpg)
+![Segmentation Results](results/vis_pallet_381.png)
 
 ## Requirements
 
