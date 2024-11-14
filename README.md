@@ -8,6 +8,10 @@ This project implements an end-to-end solution for pallet detection and segmenta
 The complete dataset is available on Google Drive:
 - [Dataset](https://drive.google.com/drive/u/1/folders/1OIxiRhRfp1iDgKj_7L7DgIXOJ6OHqHTa)
 
+## Fine tuned model Weights
+Fine tuned model Weights on Google Drive:
+- [Weights](https://drive.google.com/drive/u/1/folders/1L9P7ImR7rIuDuT4IzY570NkvcNi-QZVT)
+
 
 ## Installation
 1. Create and activate a virtual environment:
