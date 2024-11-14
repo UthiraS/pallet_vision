@@ -26,6 +26,17 @@ source venv_sam2/bin/activate # Linux/Mac
 ```bash
 pip install -r requirements.txt
 ```
+## Requirements
+```txt
+torch>=2.0.0
+ultralytics>=8.0.0
+segment-anything-2==0.1.0
+supervision>=0.3.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+ros2 humble
+```
+
 
 ## Project Structure
 ```
@@ -67,7 +78,8 @@ pallet_vision/
 ### Detection Inference
 Run single-image detection inference with live visualization:
 ```bash
-python detection_inference_display.py --weights path/to/best.pt --image path/to/image.jpg
+ python /home/uthira/pallet-detection/scripts/detection/inference/detection_inference_display.py --weights /home/uthira/pallet-detection/models/weights/best_detect.pt --image /home/uthira/pallet-detection/data/dataset/test/imagesmain/pallet_362.jpg
+
 ```
 
 Script features:
@@ -79,7 +91,8 @@ Script features:
 ### Segmentation Inference
 Run single-image segmentation inference with live visualization:
 ```bash
-python segmentation_inference_display.py --weights path/to/best.pt --image path/to/image.jpg
+python /home/uthira/pallet-detection/scripts/segmentation/inference/segmentation_inference_display.py --weights /home/uthira/pallet-detection/models/weights/best_segment.pt --image /home/uthira/pallet-detection/data/dataset/test/imagesmain/pallet_362.jpg
+
 ```
 
 Script features:
@@ -107,15 +120,83 @@ Median IoU: 0.0131
 ```
 ![Segmentation Results](results/vis_pallet_381.png)
 
-## Requirements
-```txt
-torch>=2.0.0
-ultralytics>=8.0.0
-segment-anything-2==0.1.0
-supervision>=0.3.0
-opencv-python>=4.8.0
-numpy>=1.24.0
+
+### ros2 Package
 ```
+/ros2_package/pallet
+```
+
+# ROS Pallet Package
+
+This package provides functionality for publishing and processing images in ROS2, with support for both test images and live camera feed.
+
+## Prerequisites
+
+- ROS2 Humble
+- Test images in JPG format (for testing mode)
+
+## Installation
+
+1. Source the ROS environment:
+```bash
+source /opt/ros/humble/setup.bash
+```
+
+2. Create a ROS workspace and navigate to it:
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
+```
+
+3. Copy the pallet package into the src folder:
+```bash
+cp -r /path/to/pallet src/
+```
+
+4. Build the package:
+```bash
+colcon build
+```
+
+5. Source the setup files:
+```bash
+source ./install/setup.bash
+```
+
+## Configuration
+
+Before running the test image publisher, modify the image path in:
+```
+pallet/publishImage.py
+```
+Set the path to point to your folder containing test images (JPG format).
+
+## Usage
+
+### Publishing Test Images
+
+To publish test images at 1Hz (simulating camera feed):
+```bash
+ros2 run pallet publish_test_images
+```
+
+Note: When using with real hardware, the image feed will come from an actual camera instead.
+
+### Running Inference
+
+In a new terminal, first source the ROS environment:
+```bash
+source /opt/ros/humble/setup.bash
+source ./install/setup.bash
+```
+
+Then run the inference node:
+```bash
+ros2 run pallet infer
+```
+
+
+
 
 ## Citation
 If you use this project in your research, please cite:

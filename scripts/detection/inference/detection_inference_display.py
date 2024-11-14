@@ -33,14 +33,18 @@ class SingleImageDetection:
 
     def display_results(self, image, results):
         """
-        Display inference results using cv2.imshow
+        Display inference results using cv2.imshow without waiting for key press
         """
         # Create visualization with original and predictions side by side
         h, w = image.shape[:2]
-        grid = np.zeros((h, w*2, 3), dtype=np.uint8)
+        grid = np.zeros((h + 30, w*2, 3), dtype=np.uint8)  # Added space for captions
         
         # Original image (left)
-        grid[:h, :w] = image
+        grid[0:h, :w] = image
+        
+        # Add caption for original image
+        cv2.putText(grid, 'Original Image', (10, h + 20), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
         # Detections (right)
         if results.boxes is not None:
@@ -51,20 +55,18 @@ class SingleImageDetection:
             annotated_image = self.box_annotator.annotate(scene=image.copy(), detections=detections)
             annotated_image = self.label_annotator.annotate(scene=annotated_image, detections=detections)
             
-            # Add confidence scores
-            for i, box in enumerate(results.boxes):
-                y_pos = 30 + (i * 30)
-                text = f"Detection {i+1}, Conf: {box.conf.item():.2f}"
-                cv2.putText(annotated_image, text, (10, y_pos), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                           
-            grid[:h, w:] = annotated_image
+            grid[0:h, w:] = annotated_image
+        else:
+            # If no detections, show original image on right side
+            grid[0:h, w:] = image
         
-        # Display the results
+        # Add caption for detection
+        cv2.putText(grid, 'Detection Output', (w + 10, h + 20), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
+        # Display without waiting
         cv2.imshow('Detection Results', grid)
-        print("\nPress any key to exit...")
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.waitKey(3000)  # Changed from waitKey(0) to waitKey(1)
 
     def run_inference(self, image_path):
         """
@@ -72,10 +74,10 @@ class SingleImageDetection:
         """
         # Load image
         image = cv2.imread(image_path)
+
         if image is None:
             print(f"Failed to load image: {image_path}")
             return None
-            
         try:
             # Run inference
             results = self.model.predict(
@@ -84,24 +86,16 @@ class SingleImageDetection:
                 iou=0.7,
                 max_det=300,
                 device=self.device,
-                half=True  # Use half precision
+                half=True
             )[0]
             
+            # Always display results, whether detections found or not
+            self.display_results(image, results)
+            
             if results.boxes is not None and len(results.boxes) > 0:
-                # Display results
-                self.display_results(image, results)
-                
-                # Print results
-                print(f"\nResults:")
+                # Print results (optional, you might want to remove this for continuous operation)
                 print(f"Number of detections: {len(results.boxes)}")
                 print(f"Confidence scores: {[f'{conf:.4f}' for conf in results.boxes.conf]}")
-                
-            else:
-                print("No detections found in the image")
-                # Display original image if no detections
-                cv2.imshow('No Detections', image)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
                 
         except Exception as e:
             print(f"Error processing image: {str(e)}")
