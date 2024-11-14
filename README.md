@@ -6,8 +6,8 @@ This project implements an end-to-end solution for pallet detection and segmenta
 
 ## Dataset
 The complete dataset is available on Google Drive:
-- [Detection Dataset](https://drive.google.com/drive/folders/xxx)
-- [Segmentation Dataset](https://drive.google.com/drive/folders/xxx)
+- [Dataset](https://drive.google.com/drive/u/1/folders/1OIxiRhRfp1iDgKj_7L7DgIXOJ6OHqHTa)
+
 
 ## Installation
 1. Create and activate a virtual environment:
