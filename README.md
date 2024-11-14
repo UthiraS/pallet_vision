@@ -123,17 +123,15 @@ numpy>=1.24.0
 If you use this project in your research, please cite:
 ```bibtex
 @software{pallet_detection_2024,
-  author = {Author Name},
+  author = {Uthiralakshmi Sivaraman},
   title = {Pallet Detection and Segmentation},
   year = {2024},
   publisher = {GitHub},
-  url = {https://github.com/username/repo}
+  url = {https://github.com/UthiraS/pallet_vision}
 }
 ```
 
-## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
