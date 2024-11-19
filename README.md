@@ -12,6 +12,10 @@ The complete dataset is available on Google Drive:
 Fine tuned model Weights on Google Drive:
 - [Weights](https://drive.google.com/drive/u/1/folders/1L9P7ImR7rIuDuT4IzY570NkvcNi-QZVT)
 
+## Fine tuned model Weights
+Fine tuned model Weights on Google Drive:
+- [Weights](https://drive.google.com/drive/u/1/folders/1L9P7ImR7rIuDuT4IzY570NkvcNi-QZVT)
+
 
 ## Installation
 1. Create and activate a virtual environment:
@@ -26,6 +30,17 @@ source venv_sam2/bin/activate # Linux/Mac
 ```bash
 pip install -r requirements.txt
 ```
+## Requirements
+```txt
+torch>=2.0.0
+ultralytics>=8.0.0
+segment-anything-2==0.1.0
+supervision>=0.3.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+ros2 humble
+```
+
 ## Requirements
 ```txt
 torch>=2.0.0
@@ -133,68 +148,79 @@ This package provides functionality for publishing and processing images in ROS2
 ## Prerequisites
 
 - ROS2 Humble
-- Test images in JPG format (for testing mode)
+- Python 3.8+
+- OpenCV
+- PyTorch
+- Ultralytics YOLO
 
-## Installation
+## Setup Instructions
 
-1. Source the ROS environment:
+1. Initialize ROS2 environment:
 ```bash
 source /opt/ros/humble/setup.bash
 ```
 
-2. Create a ROS workspace and navigate to it:
+2. Create and build workspace:
 ```bash
+# Create workspace
 mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+
+# Clone or copy the pallet package
+# [Copy pallet package into src folder]
+
+# Build the workspace
 cd ~/ros2_ws
-```
-
-3. Copy the pallet package into the src folder:
-```bash
-cp -r /path/to/pallet src/
-```
-
-4. Build the package:
-```bash
 colcon build
-```
 
-5. Source the setup files:
-```bash
-source ./install/setup.bash
+# Source the workspace
+source install/setup.bash
 ```
-
-## Configuration
-
-Before running the test image publisher, modify the image path in:
-```
-pallet/publishImage.py
-```
-Set the path to point to your folder containing test images (JPG format).
 
 ## Usage
 
-### Publishing Test Images
+### Running the ROS2 Bag
 
-To publish test images at 1Hz (simulating camera feed):
+Play the ROS bag at 1Hz:
 ```bash
-ros2 run pallet publish_test_images
+ros2 bag play <path-to-your-rosbag> --rate 0.067
 ```
-
-Note: When using with real hardware, the image feed will come from an actual camera instead.
+Example:
+```bash
+ros2 bag play /home/user/bags/internship_assignment_sample_bag --rate 0.067
+```
+This rate setting ensures 1Hz playback (assuming the bag was recorded at ~15Hz).
 
 ### Running Inference
 
-In a new terminal, first source the ROS environment:
+In a new terminal:
 ```bash
 source /opt/ros/humble/setup.bash
-source ./install/setup.bash
-```
-
-Then run the inference node:
-```bash
+source ~/ros2_ws/install/setup.bash
 ros2 run pallet infer
 ```
 
+## Expected Output
+
+The inference node will display:
+- Original image (resized)
+- Segmentation results
+- Detection results
+- Terminal output showing detection counts and confidence scores
+
+## Notes
+
+- Adjust the bag playback rate if you need different visualization speeds:
+  - `--rate 0.033` for 0.5Hz (one image every 2 seconds)
+  - `--rate 0.017` for 0.25Hz (one image every 4 seconds)
+
+## Troubleshooting
+
+If you encounter the QoS warning:
+```
+[WARN] []: New publisher discovered on topic '/robot1/zed2i/left/image_rect_color', offering incompatible QoS
+```
+This is expected and handled by the node's QoS settings.
 
 
 

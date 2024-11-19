@@ -18,81 +18,60 @@ def parse_args():
 
 class SingleImageDetection:
     def __init__(self, model_path):
-        """
-        Initialize inference
-        Args:
-            model_path: Path to model weights
-        """
+        """Initialize as before"""
         self.model = YOLO(model_path)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f"Using device: {self.device}")
+        print(f"Detection using device: {self.device}")
         
-        # Initialize supervision annotators
-        self.box_annotator = sv.BoxAnnotator()
-        self.label_annotator = sv.LabelAnnotator()
-
     def display_results(self, image, results):
-        """
-        Display inference results using cv2.imshow without waiting for key press
-        """
-        # Create visualization with original and predictions side by side
+        """Display detection results"""
         h, w = image.shape[:2]
-        grid = np.zeros((h + 30, w*2, 3), dtype=np.uint8)  # Added space for captions
+        grid = np.zeros((h + 30, w*2, 3), dtype=np.uint8)
         
         # Original image (left)
         grid[0:h, :w] = image
         
-        # Add caption for original image
-        cv2.putText(grid, 'Original Image', (10, h + 20), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        
         # Detections (right)
-        if results.boxes is not None:
-            # Convert results to supervision format
-            detections = sv.Detections.from_ultralytics(results)
-            
-            # Annotate image with boxes and labels
-            annotated_image = self.box_annotator.annotate(scene=image.copy(), detections=detections)
-            annotated_image = self.label_annotator.annotate(scene=annotated_image, detections=detections)
-            
-            grid[0:h, w:] = annotated_image
+        if results.boxes is not None and len(results.boxes):
+            # Draw boxes on copy of image
+            annotated = image.copy()
+            for box in results.boxes.data.cpu().numpy():
+                x1, y1, x2, y2, conf, cls = box
+                cv2.rectangle(annotated, 
+                            (int(x1), int(y1)), 
+                            (int(x2), int(y2)), 
+                            (0, 255, 0), 2)
+                cv2.putText(annotated, 
+                           f'conf: {conf:.2f}', 
+                           (int(x1), int(y1)-10),
+                           cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.5, (0, 255, 0), 2)
+            grid[0:h, w:] = annotated
         else:
-            # If no detections, show original image on right side
             grid[0:h, w:] = image
-        
-        # Add caption for detection
-        cv2.putText(grid, 'Detection Output', (w + 10, h + 20), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        
-        # Display without waiting
+            
         cv2.imshow('Detection Results', grid)
-        cv2.waitKey(1)  # Changed from waitKey(0) to waitKey(1)
-
+        
     def run_inference(self, image):
-        """
-        Run inference on single image
-        """
+        """Run detection inference"""
         try:
-            # Run inference
             results = self.model.predict(
                 source=image,
                 conf=0.25,
                 iou=0.7,
                 max_det=300,
-                device=self.device,
-                half=True
+                device=self.device
             )[0]
             
-            # Always display results, whether detections found or not
             self.display_results(image, results)
             
-            if results.boxes is not None and len(results.boxes) > 0:
-                # Print results (optional, you might want to remove this for continuous operation)
-                print(f"Number of detections: {len(results.boxes)}")
-                print(f"Confidence scores: {[f'{conf:.4f}' for conf in results.boxes.conf]}")
+            if results.boxes is not None:
+                print(f"Detection found {len(results.boxes)} instances")
+            else:
+                print("No detection instances found")
                 
         except Exception as e:
-            print(f"Error processing image: {str(e)}")
+            print(f"Error in detection: {str(e)}")
             import traceback
             traceback.print_exc()
 
