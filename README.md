@@ -12,9 +12,7 @@ The complete dataset is available on Google Drive:
 Fine tuned model Weights on Google Drive:
 - [Weights](https://drive.google.com/drive/u/1/folders/1L9P7ImR7rIuDuT4IzY570NkvcNi-QZVT)
 
-## Fine tuned model Weights
-Fine tuned model Weights on Google Drive:
-- [Weights](https://drive.google.com/drive/u/1/folders/1L9P7ImR7rIuDuT4IzY570NkvcNi-QZVT)
+
 
 
 ## Installation
@@ -41,15 +39,7 @@ numpy>=1.24.0
 ros2 humble
 ```
 
-## Requirements
-```txt
-torch>=2.0.0
-ultralytics>=8.0.0
-segment-anything-2==0.1.0
-supervision>=0.3.0
-opencv-python>=4.8.0
-numpy>=1.24.0
-ros2 humble
+
 ```
 
 
