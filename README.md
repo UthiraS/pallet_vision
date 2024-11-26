@@ -216,6 +216,9 @@ This is expected and handled by the node's QoS settings.
 
 ## Citation
 If you use this project in your research, please cite:
+Cite this work as,
+
+Uthiralakshmi Sivaraman. Pallet Detection and Segmentation. (https://github.com/UthiraS/pallet_vision), GitHub. Retrieved date.
 ```bibtex
 @software{pallet_detection_2024,
 author = {Uthiralakshmi Sivaraman},
