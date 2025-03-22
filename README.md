@@ -233,3 +233,5 @@ url = {https://github.com/UthiraS/pallet_vision}
 - SAM2 by Meta AI Research 
 - YOLOv11
 - Roboflow for the initial dataset annotation
+- Code is based on [Roboflow Yolov11 Detection](https://github.com/roboflow/notebooks/blob/main/notebooks/train-yolo11-object-detection-on-custom-dataset.ipynb)  and [Roboflow SAM2 Annotation](https://github.com/roboflow/notebooks/blob/main/notebooks/how-to-segment-images-with-sam-2.ipynb) jupyter notebooks 
+- Claude 3.5 for improving Bounding box , semantic masks and converting dataset formats code generation
